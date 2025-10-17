@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using mf_dev_backend_web.Models;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
 
 namespace mf_dev_backend_web.Controllers
 {
@@ -22,6 +24,66 @@ namespace mf_dev_backend_web.Controllers
         public async Task<IActionResult> Index()
         {
             return View(await _context.Usuarios.ToListAsync());
+        }
+
+
+        public IActionResult Login()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Login(Usuario usuario)
+        {
+            var dados = await _context.Usuarios.FindAsync(usuario.id);
+            
+            if(dados == null)
+            {
+                ViewBag.Message = "Usuário e/ou senha inválidos.";
+                return View();
+            }
+            if (dados != null)
+            {
+                bool senhaOk = BCrypt.Net.BCrypt.Verify(usuario.Senha, dados.Senha);
+                if (senhaOk)
+                {
+
+                    var claims = new List<Claim>
+                    {
+                        new Claim(ClaimTypes.Name, dados.Nome),
+                        new Claim(ClaimTypes.NameIdentifier, dados.id.ToString()),
+                        new Claim("Perfil", dados.perfil.ToString())
+                    };
+
+                    var usuarioIdentity = new ClaimsIdentity(claims, "Login");
+                    ClaimsPrincipal principal = new ClaimsPrincipal(usuarioIdentity);
+
+                    var props = new AuthenticationProperties
+                    {
+                        AllowRefresh = true,
+                        ExpiresUtc = DateTimeOffset.UtcNow.AddHours(1),
+                        IsPersistent = true
+                    };
+
+                    await HttpContext.SignInAsync(principal, props);
+
+                    // Usuário autenticado com sucesso
+                    return Redirect("/");
+                } 
+                else
+                {
+                    ViewBag.Message = "Usuário e/ou senha inválidos.";
+                }
+            }
+
+
+            return View();
+        }
+
+        public async Task<IActionResult> Logout()
+        {
+            await HttpContext.SignOutAsync();
+            return RedirectToAction("Login");
         }
 
         // GET: Usuarios/Details/5
