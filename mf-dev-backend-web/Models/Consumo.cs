@@ -9,17 +9,23 @@ namespace mf_dev_backend_web.Models
     {
         [Key]
         public int Id { get; set; }
+
         [Required(ErrorMessage ="Obrigatório informar a descrição.")]
-        public int Descricao { get; set; }
+        [Display(Name = "Descrição")]
+        public string Descricao { get; set; }
+
         [Required(ErrorMessage = "Obrigatório informar a data.")]
         public DateTime data { get; set; }
+
         [Required(ErrorMessage = "Obrigatório informar o valor")]
         public decimal Valor { get; set; }
+
         [Required(ErrorMessage = "Obrigatório informar a quilometragem!")]
         public int Km { get; set; }
 
         [Display(Name = "Tipo de Combustível")]
         public TipoCombustivel tipo { get; set; }
+
         [Display(Name = "Veículo")]
         public int VeiculoId { get; set; }
         [ForeignKey("VeiculoId")]
