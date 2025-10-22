@@ -8,9 +8,11 @@ using Microsoft.EntityFrameworkCore;
 using mf_dev_backend_web.Models;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 
 namespace mf_dev_backend_web.Controllers
 {
+    [Authorize(Roles ="Admin")] 
     public class UsuariosController : Controller
     {
         private readonly AppDbContext _context;
@@ -21,18 +23,26 @@ namespace mf_dev_backend_web.Controllers
         }
 
         // GET: Usuarios
+        
         public async Task<IActionResult> Index()
         {
             return View(await _context.Usuarios.ToListAsync());
         }
 
+        [AllowAnonymous]
+        public IActionResult AccessDenied()
+        {
+            return View();
+        }
 
+        [AllowAnonymous]
         public IActionResult Login()
         {
             return View();
         }
 
         [HttpPost]
+        [AllowAnonymous]
         public async Task<IActionResult> Login(Usuario usuario)
         {
             var dados = await _context.Usuarios.FindAsync(usuario.id);
@@ -52,8 +62,7 @@ namespace mf_dev_backend_web.Controllers
                     {
                         new Claim(ClaimTypes.Name, dados.Nome),
                         new Claim(ClaimTypes.NameIdentifier, dados.id.ToString()),
-                        new Claim("Perfil", dados.perfil.ToString())
-                    };
+                        new Claim(ClaimTypes.Role, dados.perfil.ToString())                    };
 
                     var usuarioIdentity = new ClaimsIdentity(claims, "Login");
                     ClaimsPrincipal principal = new ClaimsPrincipal(usuarioIdentity);
@@ -80,6 +89,7 @@ namespace mf_dev_backend_web.Controllers
             return View();
         }
 
+        [AllowAnonymous]
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync();
